@@ -1,10 +1,13 @@
 import React from 'react';
-import {SafeAreaView, StyleSheet} from 'react-native';
+import {AppStack} from './src/routes';
+import TaskContextProvider from './src/context/TaskContext';
 
 const App = () => {
-  return <SafeAreaView></SafeAreaView>;
+  return (
+    <TaskContextProvider>
+      <AppStack />
+    </TaskContextProvider>
+  );
 };
-
-const styles = StyleSheet.create({});
 
 export default App;
