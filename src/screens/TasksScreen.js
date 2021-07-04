@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
+  View,
 } from 'react-native';
 import {TaskItem} from '../components/index';
 import AppUtils from '../utils/AppUtils';
@@ -33,12 +34,16 @@ const TasksScreen = props => {
 
   const archiveHandler = archiveItem => {};
 
-  const EmptyData = <Text>Empty data</Text>;
+  const EmptyData = (
+    <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+      <Text>Empty data</Text>
+    </View>
+  );
 
   const List = (
     <FlatList
       data={tasks}
-      keyExtractor={item => item.id}
+      keyExtractor={item => item._id}
       renderItem={({item}) => (
         <TaskItem
           item={item}
