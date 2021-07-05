@@ -16,7 +16,7 @@ export const TASK_SCHEMA = 'Task';
 const TaskSchema = {
   name: TASK_SCHEMA,
   properties: {
-    _id: 'string',
+    _id: 'uuid',
     name: 'string',
     status: 'string',
   },
@@ -25,7 +25,7 @@ const TaskSchema = {
 
 //* Define connection
 const databaseOptions = {
-  path: 'app.realm',
+  path: 'myrealapp',
   schema: [TaskSchema],
 };
 
@@ -41,17 +41,6 @@ export const TaskContext = createContext();
 const TaskContextProvider = props => {
   const [tasks, setTasks] = useState([]);
   //** Opening and closing connection */
-
-  useEffect(() => {
-    // if (AppUtils.isNull(realm)) {
-    //   openConnection();
-    // }
-    return () => {
-      // debugger;
-      // closeConnection();
-    };
-  }, []);
-
   useEffect(() => {
     // if (!AppUtils.isNull(realm)) {
     //   getTasks();
@@ -73,35 +62,25 @@ const TaskContextProvider = props => {
   const getTasks = () => {
     Realm.open(databaseOptions)
       .then(realm => {
-        let allTasks = realm.object(TASK_SCHEMA);
-        setTasks(allTasks);
+        let allTasks = realm.objects(TASK_SCHEMA);
+        debugger;
+        setTasks([...allTasks]);
       })
       .catch(err => {});
   };
 
   const addTask = task => {
-    // let newTask = {
-    //   id: 4,
-    //   name: task,
-    //   status: 'doing',
-    // };
-    // let newTasks = [...tasks, newTask];
-    // setTasks(newTasks);
+    let newTask = {
+      _id: new UUID(),
+      name: task,
+      status: 'open',
+    };
     Realm.open(databaseOptions)
       .then(realm => {
         let createdTask;
         realm.write(() => {
-          createdTask = realm.create('Task', {
-            _id: new UUID().toString(),
-            name: task,
-            status: 'open',
-          });
+          createdTask = realm.create(TASK_SCHEMA, newTask);
           setTasks([...tasks, createdTask]);
-          // if (!AppUtils.isNull(createdTask)) {
-          //   debugger;
-          //   //setTasks([...tasks, createdTask]);
-          //   getTasks();
-          // }
         });
       })
       .catch(err => {});
