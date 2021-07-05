@@ -12,14 +12,21 @@ import AppUtils from '../utils/AppUtils.js';
 // 4. close connection
 
 //* STEP 1  - Define Object model */
+export const TASK_SCHEMA = 'Task';
 const TaskSchema = {
-  name: 'Task',
+  name: TASK_SCHEMA,
   properties: {
     _id: 'string',
     name: 'string',
     status: 'string',
   },
   primaryKey: '_id',
+};
+
+//* Define connection
+const databaseOptions = {
+  path: 'app.realm',
+  schema: [TaskSchema],
 };
 
 //** CONTEXT SECTION  */
@@ -31,15 +38,14 @@ export const TaskContext = createContext();
 //   {id: 3, name: 'Task 3', status: 'archived'},
 // ];
 
-const TaskContextProvider = ({children}) => {
+const TaskContextProvider = props => {
   const [tasks, setTasks] = useState([]);
   //** Opening and closing connection */
-  const [realm, setRealm] = useState(null);
 
   useEffect(() => {
-    if (AppUtils.isNull(realm)) {
-      openConnection();
-    }
+    // if (AppUtils.isNull(realm)) {
+    //   openConnection();
+    // }
     return () => {
       // debugger;
       // closeConnection();
@@ -47,35 +53,30 @@ const TaskContextProvider = ({children}) => {
   }, []);
 
   useEffect(() => {
-    if (!AppUtils.isNull(realm)) {
-      getTasks();
-    }
-  }, [realm]);
+    // if (!AppUtils.isNull(realm)) {
+    //   getTasks();
+    // }
+    getTasks();
+  }, []);
 
-  const openConnection = async () => {
-    const connectedRealm = await Realm.open({
-      path: 'myrealm',
-      schema: [TaskSchema],
-    });
-    if (!AppUtils.isNull(connectedRealm)) {
-      setRealm(connectedRealm);
-    }
-  };
+  // const openConnection = async () => {
+  //   const connectedRealm = await Realm.open(databaseOptions);
+  //   if (!AppUtils.isNull(connectedRealm)) {
+  //     setRealm(connectedRealm);
+  //   }
+  // };
 
-  const closeConnection = async () => {
-    realm.close();
-  };
+  // const closeConnection = async () => {
+  //   realm.close();
+  // };
 
   const getTasks = () => {
-    try {
-      const retrivedTasks = realm.objects('Task');
-      if (!AppUtils.isNull(retrivedTasks)) {
-        setTasks(retrivedTasks);
-      }
-    } catch (error) {
-      //Catch trường hợp objects chưa khởi tạo và null
-      console.log(error);
-    }
+    Realm.open(databaseOptions)
+      .then(realm => {
+        let allTasks = realm.object(TASK_SCHEMA);
+        setTasks(allTasks);
+      })
+      .catch(err => {});
   };
 
   const addTask = task => {
@@ -86,31 +87,42 @@ const TaskContextProvider = ({children}) => {
     // };
     // let newTasks = [...tasks, newTask];
     // setTasks(newTasks);
-    let createdTask;
-    realm.write(() => {
-      createdTask = realm.create('Task', {
-        _id: new UUID().toString(),
-        name: task,
-        status: 'open',
-      });
-      if (!AppUtils.isNull(createdTask)) {
-        setTasks([...tasks, createdTask]);
-      }
-    });
+    Realm.open(databaseOptions)
+      .then(realm => {
+        let createdTask;
+        realm.write(() => {
+          createdTask = realm.create('Task', {
+            _id: new UUID().toString(),
+            name: task,
+            status: 'open',
+          });
+          setTasks([...tasks, createdTask]);
+          // if (!AppUtils.isNull(createdTask)) {
+          //   debugger;
+          //   //setTasks([...tasks, createdTask]);
+          //   getTasks();
+          // }
+        });
+      })
+      .catch(err => {});
   };
 
   const removeTask = task => {
-    realm.write(() => {
-      // Delete the task from the realm.
-      realm.delete(task);
-    });
-    let remained = tasks.filter(item => item !== task);
-    setTasks(remained);
+    Realm.open(databaseOptions)
+      .then(realm => {
+        realm.write(() => {
+          // Delete the task from the realm.
+          realm.delete(task);
+        });
+        let remained = tasks.filter(item => item !== task);
+        setTasks(remained);
+      })
+      .then(err => {});
   };
 
   return (
     <TaskContext.Provider value={{tasks, addTask, removeTask}}>
-      {children}
+      {props.children}
     </TaskContext.Provider>
   );
 };
